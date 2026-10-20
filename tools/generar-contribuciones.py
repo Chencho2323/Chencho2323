@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
@@ -108,34 +109,56 @@ def _texto_svg(svg: str) -> list[str]:
     return [t.strip() for t in re.findall(r"<text[^>]*>([^<]*)</text>", svg) if t.strip()]
 
 
-def total_contribuciones() -> int:
+def _descargar_con_reintentos(url: str, intentos: int = 4) -> str | None:
+    """Descarga una URL reintentando. Las tarjetas de stats son intermitentes:
+    a veces responden 200 con un SVG de error de un solo texto."""
+    for i in range(intentos):
+        try:
+            contenido = _descargar(url)
+        except Exception:  # noqa: BLE001 - un fallo de red no debe romper el tool
+            contenido = ""
+        if len(_texto_svg(contenido)) > 2:
+            return contenido
+        if i < intentos - 1:
+            time.sleep(2 + i * 2)
+    return None
+
+
+def total_contribuciones() -> int | None:
     """Total de contribuciones historicas (mismo origen que la tarjeta streak)."""
-    textos = _texto_svg(_descargar(URL_STREAK))
+    svg = _descargar_con_reintentos(URL_STREAK)
+    if svg is None:
+        return None
+    textos = _texto_svg(svg)
     for i, t in enumerate(textos):
         if t == "Total Contributions" and i > 0:
-            return int(textos[i - 1].replace(",", ""))
-    return 0
+            valor = textos[i - 1].replace(",", "")
+            return int(valor) if valor.isdigit() else None
+    return None
 
 
-def commits_publicos() -> int:
+def commits_publicos() -> int | None:
     """Commits publicos (mismo origen que la tarjeta de estadisticas)."""
-    textos = _texto_svg(_descargar(URL_STATS))
+    svg = _descargar_con_reintentos(URL_STATS)
+    if svg is None:
+        return None
+    textos = _texto_svg(svg)
     for i, t in enumerate(textos):
         if t.startswith("Total Commits"):
             for j in range(i + 1, min(i + 4, len(textos))):
                 if textos[j].isdigit():
                     return int(textos[j])
-    return 0
+    return None
 
 
-def repos_publicos() -> int:
+def repos_publicos() -> int | None:
     try:
         import json as _json
 
         datos = _json.loads(_descargar(URL_USUARIO))
         return int(datos.get("public_repos", 0))
     except Exception:  # noqa: BLE001
-        return 0
+        return None
 
 
 # --- Generacion del SVG ----------------------------------------------------
@@ -233,15 +256,33 @@ def svg_animado(
 
 
 def actualizar_readme(
-    total: int,
-    commits: int,
-    repos: int,
+    total: int | None,
+    commits: int | None,
+    repos: int | None,
     dias_activos: int,
     desde: str,
     total_anual: int,
 ) -> bool:
-    """Reemplaza el bloque de cifras entre los marcadores. Devuelve True si cambio."""
+    """Reemplaza el bloque de cifras entre los marcadores. Devuelve True si cambio.
+
+    Si alguna cifra no se pudo leer, no se toca el README: es preferible
+    dejar el dato viejo (que el script anterior verifico) que escribir un 0
+    que hace pensar que la cuenta quedo sin actividad.
+    """
     if not README.exists():
+        return False
+
+    faltantes = [
+        nombre
+        for nombre, valor in (
+            ("contribuciones", total),
+            ("commits", commits),
+            ("repositorios", repos),
+        )
+        if valor is None
+    ]
+    if faltantes:
+        print(f"    AVISO: no se pudo leer {', '.join(faltantes)}. No se modifica el README.")
         return False
 
     bloque = (
@@ -290,9 +331,12 @@ def actualizar_readme(
     return True
 
 
-def fecha_inicio() -> str:
+def fecha_inicio() -> str | None:
     """Mes y anio desde los que la cuenta acumula contribuciones."""
-    textos = _texto_svg(_descargar(URL_STREAK))
+    svg = _descargar_con_reintentos(URL_STREAK)
+    if svg is None:
+        return None
+    textos = _texto_svg(svg)
     for i, t in enumerate(textos):
         if t == "Total Contributions" and i + 1 < len(textos):
             valor = textos[i + 1].split("-")[0].strip()
@@ -323,8 +367,13 @@ def main() -> None:
     total = total_contribuciones()
     commits = commits_publicos()
     repos = repos_publicos()
+    desde = fecha_inicio()
+
+    if desde is None:
+        desde = "octubre de 2019"
+
     cambio = actualizar_readme(
-        total, commits, repos, dias_activos, fecha_inicio(), total_anual
+        total, commits, repos, dias_activos, desde, total_anual
     )
 
     print(
