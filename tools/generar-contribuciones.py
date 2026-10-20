@@ -253,21 +253,31 @@ def actualizar_readme(
     )
 
     texto = README.read_text(encoding="utf-8")
+
+    # 1) Se retira el bloque delimitado por los marcadores.
     if INICIO_MARCADOR in texto and FIN_MARCADOR in texto:
         inicio = texto.index(INICIO_MARCADOR)
         fin = texto.index(FIN_MARCADOR) + len(FIN_MARCADOR)
-        nuevo = texto[:inicio] + bloque + texto[fin:]
-    else:
-        # Primera ejecucion: se inserta despues de la linea de la tarjeta streak.
-        ancla = "**204 contribuciones**"
-        if ancla in texto:
-            fin_linea = texto.index("\n", texto.index(ancla)) + 1
-            nuevo = texto[:fin_linea] + "\n" + bloque + "\n" + texto[fin_linea:]
-        else:
-            return False
+        texto = texto[:inicio] + texto[fin:]
 
-    # El texto alternativo del grafico lleva la cifra del ultimo ano: hay que
-    # mantenerlo alineado con el dato real.
+    # 2) Se retiran las lineas de cifras sueltas. Sin este paso puede quedar
+    #    una version antigua visible junto a la nueva, con dos cifras distintas.
+    texto = re.sub(
+        r"^\*\*[\d,]+ contribuciones\*\* en GitHub desde [^\n]*\n+",
+        "",
+        texto,
+        flags=re.M,
+    )
+
+    # 3) El bloque se inserta justo despues de la tabla de tarjetas.
+    ancla = "</table>"
+    if ancla not in texto:
+        return False
+    pos = texto.index(ancla) + len(ancla)
+    nuevo = texto[:pos] + "\n\n" + bloque + texto[pos:]
+
+    # 4) El texto alternativo del grafico lleva la cifra del ultimo ano: hay que
+    #    mantenerlo alineado con el dato real.
     nuevo = re.sub(
         r'alt="Actividad en GitHub: [\d.]+ contribuciones en el último año"',
         f'alt="Actividad en GitHub: {total_anual} contribuciones en el último año"',
