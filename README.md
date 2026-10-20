@@ -15,7 +15,7 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 ## Actividad en GitHub
 
 <a href="https://github.com/Chencho2323">
-  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 188 contribuciones en el último año" width="760" />
+  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 190 contribuciones en el último año" width="760" />
 </a>
 
 <table>
@@ -30,6 +30,10 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 </table>
 
 **204 contribuciones** en GitHub desde octubre de 2019 · **28 commits** públicos · **4 repositorios** abiertos · **24 días con actividad** en el último año.
+
+<!-- CONTRIBUCIONES:INICIO -->
+**204 contribuciones** en GitHub desde octubre de 2019 · **30 commits** públicos · **4 repositorios** abiertos · **24 días con actividad** en el último año.
+<!-- CONTRIBUCIONES:FIN -->
 
 ## Qué hago
 
