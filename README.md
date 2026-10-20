@@ -9,7 +9,7 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 
 [![Portafolio](https://img.shields.io/badge/portafolio-03A8FA?style=flat-square&logo=github&link=https://chencho2323.github.io/)](https://chencho2323.github.io/)
 [![Website](https://img.shields.io/badge/sitio-inheritdevs.com-9800E9?style=flat-square&logo=googlechrome&logoColor=white&link=https://inheritdevs.com/)](https://inheritdevs.com/)
-[![LinkedIn](https://img.shields.io/badge/linkedin-0A66C2?style=flat-square&logo=linkedin&logoColor=white&link=https://www.linkedin.com/company/inheritdevs)](https://www.linkedin.com/company/inheritdevs)
+[![LinkedIn](https://img.shields.io/badge/linkedin-0A66C2?style=flat-square&logo=linkedin&logoColor=white&link=https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info)](https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info)
 [![WhatsApp](https://img.shields.io/badge/whatsapp-25D366?style=flat-square&logo=whatsapp&logoColor=white&link=https://wa.me/573164925290)](https://wa.me/573164925290)
 
 ## Actividad en GitHub
@@ -68,7 +68,6 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 
 ## Código abierto
 
-Lo que puede enseñar algo, está público:
 
 ### [appointment-management-system](https://github.com/Chencho2323/appointment-management-system)
 Sistema full-stack de gestión de citas de entrega con reportes en tiempo real de
