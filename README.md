@@ -52,11 +52,11 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 
 | | |
 |---|---|
-| 🧩 **25+** | Módulos Odoo propios |
-| 🚀 **40+** | Proyectos entregados |
-| 👥 **30+** | Clientes activos |
+| 🧩 **15+** | Módulos Odoo propios |
+| 🚀 **30+** | Proyectos entregados |
+| 👥 **5+** | Clientes activos |
 | ⏱️ **12.000+** | Horas de desarrollo |
-| 🔗 **15+** | Integraciones activas |
+| 🔗 **10+** | Integraciones activas |
 | 📈 **99.9%** | Uptime en producción |
 
 ## Stack
