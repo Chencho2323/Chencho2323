@@ -107,7 +107,7 @@ integración concreta, conversamos y lo revisamos.
 
 ## Cómo trabajar conmigo
 
-Escríbeme por [WhatsApp](https://wa.me/573164925290), por [LinkedIn](https://www.linkedin.com/company/inheritdevs)
+Escríbeme por [WhatsApp](https://wa.me/573164925290), por [LinkedIn](https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info)
 o desde el [formulario de contacto](https://inheritdevs.com/contacto). Cuéntame tu
 proceso y armamos la mejor solución sobre Odoo.
 
