@@ -12,6 +12,25 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 [![LinkedIn](https://img.shields.io/badge/linkedin-0A66C2?style=flat-square&logo=linkedin&logoColor=white&link=https://www.linkedin.com/company/inheritdevs)](https://www.linkedin.com/company/inheritdevs)
 [![WhatsApp](https://img.shields.io/badge/whatsapp-25D366?style=flat-square&logo=whatsapp&logoColor=white&link=https://wa.me/573164925290)](https://wa.me/573164925290)
 
+## Actividad en GitHub
+
+<a href="https://github.com/Chencho2323">
+  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 188 contribuciones en el último año" width="760" />
+</a>
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github-readme-stats.vercel.app/api?username=Chencho2323&show_icons=true&include_all_commits=true&theme=radical" alt="Estadísticas de GitHub" height="195" />
+    </td>
+    <td align="center">
+      <img src="https://github-readme-streak-stats.herokuapp.com/?user=Chencho2323&theme=dark&hide_border=true" alt="Racha de contribuciones" height="195" />
+    </td>
+  </tr>
+</table>
+
+**204 contribuciones** en GitHub desde octubre de 2019 · **28 commits** públicos · **4 repositorios** abiertos · **24 días con actividad** en el último año.
+
 ## Qué hago
 
 - **Implementación y migración de Odoo** para operaciones comerciales, financieras y de producción.
@@ -68,7 +87,8 @@ en desarrollo activo. El primero es un asistente de agenda que interpreta lengua
 natural y administra citas por WhatsApp: Node.js 24, `node:sqlite` nativo, sin
 dependencias de terceros y 81 pruebas automatizadas.
 
-El código se abre bajo acuerdo de confidencialidad.
+Estos repositorios no son públicos. Si te interesa ver el código o evaluar una
+integración concreta, conversamos y lo revisamos.
 
 ## Enfoque
 
