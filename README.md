@@ -1,109 +1,101 @@
-# Hola, soy Sergio Alejandro 👋
+# Sergio Alejandro Alarcón Hernández
 
-Dirigo **[InheritDevs](https://inheritdevs.com/)**, una empresa de desarrollo de software
-empresarial e inteligencia artificial. Construimos sobre **Odoo 19** en Colombia:
-implementaciones, módulos a medida, integraciones, facturación electrónica ante la
-DIAN y asistentes de IA conectados a los datos del negocio.
+Ingeniero de Sistemas. Trabajo con Odoo desde 2018: implementación, módulos a medida,
+facturación electrónica colombiana e integraciones. Vivo en Medellín.
 
-> Software empresarial que sí trabaja.
+Dirijo el área de Sistemas en Montoc Cosmetics y llevo InheritDevs, mi propia firma de
+software empresarial sobre Odoo.
 
-[![Portafolio](https://img.shields.io/badge/portafolio-03A8FA?style=flat-square&logo=github&link=https://chencho2323.github.io/)](https://chencho2323.github.io/)
-[![Website](https://img.shields.io/badge/sitio-inheritdevs.com-9800E9?style=flat-square&logo=googlechrome&logoColor=white&link=https://inheritdevs.com/)](https://inheritdevs.com/)
-[![LinkedIn](https://img.shields.io/badge/linkedin-0A66C2?style=flat-square&logo=linkedin&logoColor=white&link=https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info)](https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info)
-[![WhatsApp](https://img.shields.io/badge/whatsapp-25D366?style=flat-square&logo=whatsapp&logoColor=white&link=https://wa.me/573164925290)](https://wa.me/573164925290)
+## Cómo llegué aquí
+
+Entré a Mundial de Granos y Panelas en diciembre de 2015 como administrador de TIC y en 2018
+me tocó arrancar el ERP: no había nada, se implementó Odoo Enterprise desde cero. Ahí aprendí
+lo que no se aprende en un curso. Parametricé, administré y desarrollé módulos durante casi
+seis años, con automatizaciones en UiPath y ElectroNeek para los procesos que no valía la
+pena tocar a mano.
+
+Sigo trabajando con ellos. Hoy son clientes de InheritDevs: desarrollos nuevos,
+actualizaciones y mantenimiento del código.
+
+Después vino Biónica Visions, donde administré un Odoo v18 y resolvimos la facturación
+electrónica por Siigo, porque la empresa no usaba ni DIAN ni Carvajal. De ahí salieron
+también las integraciones con los otros sistemas de la operación, las pasarelas de pago y la
+migración del sitio web de WordPress a Odoo. Antes había pasado por INNÓVATE, montando Odoo
+Community para la gestión de proyectos y clientes.
+
+## Los tres proyectos que mejor explican lo que hago
+
+**Odoo en producción durante seis años, en el mismo cliente.**
+Mundial de Granos y Panelas, sector alimentos. Implementación desde cero en 2018 y evolución
+continua: parametrización de la operación, módulos propios para lo que el ERP no cubría,
+automatizaciones en UiPath y ElectroNeek, y el mantenimiento de todo eso. La parte difícil no
+fue la puesta en marcha, fue sostenerla durante seis años sin parar la operación.
+
+**Facturación electrónica por Siigo dentro de Odoo.**
+Biónica Visions. La empresa no facturaba por DIAN ni por Carvajal, así que el camino
+estándar no servía. Se construyeron las APIs contra Siigo, se conectaron los demás sistemas
+de la compañía y se migró el sitio web de WordPress a Odoo, con pasarelas de pago incluidas.
+
+**Módulos de localización colombiana para Odoo 19 Community.**
+InheritDevs. Facturación electrónica, nómina electrónica, PILA según la Resolución 2388 de
+2016 —archivo plano de 676 caracteres y 96 campos, con detección de novedades de ingreso,
+retiro, vacaciones e incapacidad—, pasarelas de pago e integración de modelos de lenguaje con
+Odoo y WhatsApp.
+
+## Lo que estoy construyendo
+
+InheritDevs lleva cuatro meses y está en la búsqueda de sus primeros clientes. Lo que ya
+existe son los módulos: facturación electrónica, nómina electrónica, PILA, pasarelas de pago
+y el asistente de IA sobre WhatsApp que interpreta lenguaje natural y administra agenda.
+Sobre Odoo 19 Community.
+
+Prefiero decirlo así y no inflar cifras. Lo que hay se puede leer, ejecutar y auditar.
+
+## Stack
+
+**ERP** — Odoo 14 a 19, Enterprise y Community · Python · PostgreSQL · OWL · QWeb
+**Backend** — Node.js · PHP · Django REST · TypeScript · APIs REST y JSON-RPC
+**Automatización** — UiPath · ElectroNeek · GitHub Actions · Jenkins · Docker
+**Fiscal colombiano** — UBL 2.1 · DIAN · Siigo · PILA · nómina electrónica
+**IA** — MCP · modelos de lenguaje · WhatsApp Business
 
 ## Actividad en GitHub
 
 <a href="https://github.com/Chencho2323">
-  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 239 contribuciones en el último año" width="760" />
+  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 287 contribuciones en el último año" width="760" />
 </a>
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/resumen.svg" alt="Resumen de actividad en GitHub" width="495" />
 </p>
 <!-- CONTRIBUCIONES:INICIO -->
-**239 contribuciones** en el último año · **31 días** con actividad · racha actual de **8 días** · **177 commits** públicos · **5 repositorios** abiertos · en GitHub desde octubre de 2019.
+**287 contribuciones** en el último año · **34 días** con actividad · racha actual de **8 días** · **220 commits** públicos · **5 repositorios** abiertos · en GitHub desde octubre de 2019.
 <!-- CONTRIBUCIONES:FIN -->
 
+## Código que se puede leer
 
-## Qué hago
-
-- **Implementación y migración de Odoo** para operaciones comerciales, financieras y de producción.
-- **Módulos a medida** en Python, OWL y QWeb para los procesos que Odoo de fábrica no cubre.
-- **Localización colombiana:** facturación electrónica DIAN, XML UBL 2.1, retenciones, datos maestros fiscales y NIT.
-- **Integraciones:** Rappi, Glovo, PedidosYa, Shopify, Wompi, webhooks, REST y JSON-RPC.
-- **IA aplicada:** asistentes sobre WhatsApp, agentes con **MCP** sobre Odoo y gobernanza de IA corporativa.
-- **eCommerce:** tiendas y portales B2B sobre Odoo, con catálogos, precios por compañía y pagos en línea.
-
-## En cifras
-
-| | |
-|---|---|
-| 🧩 **15+** | Módulos Odoo propios |
-| 🚀 **30+** | Proyectos entregados |
-| 👥 **5+** | Clientes activos |
-| ⏱️ **12.000+** | Horas de desarrollo |
-| 🔗 **10+** | Integraciones activas |
-| 📈 **99.9%** | Uptime en producción |
-
-## Stack
-
-**ERP y backend** — Odoo 19 · Python · PostgreSQL · OWL · QWeb
-**Interfaz** — JavaScript · TypeScript · Next.js · Django REST · JWT
-**Infraestructura** — Docker · Docker Compose · Git · CI/CD · Jenkins
-**IA e integraciones** — MCP · LLMs · WhatsApp · REST APIs · JSON-RPC
-
-## Código abierto
-
+### [api-dian-facturacion](https://github.com/Chencho2323/api-dian-facturacion)
+Servicio REST que arma documentos UBL 2.1, los valida contra el XSD de la DIAN, los firma y
+expone el estado del envío. Resuelve el sujeto por NIT y calcula IVA e IVA retenido.
+**PHP 8.3 · SQLite · PHPUnit**
 
 ### [appointment-management-system](https://github.com/Chencho2323/appointment-management-system)
-Sistema full-stack de gestión de citas de entrega con reportes en tiempo real de
-tiempos promedio por línea de producto.
-**Django REST + JWT + drf-spectacular · Next.js · PostgreSQL · GitHub Actions**
-
-[![CI](https://img.shields.io/github/actions/workflow/status/Chencho2323/appointment-management-system/ci.yml?branch=main&label=CI)](https://github.com/Chencho2323/appointment-management-system/actions/workflows/ci.yml)
-[![Licencia](https://img.shields.io/github/license/Chencho2323/appointment-management-system?label=MIT)](https://github.com/Chencho2323/appointment-management-system/blob/main/LICENSE)
-![TypeScript](https://img.shields.io/github/languages/top/Chencho2323/appointment-management-system?label=TypeScript)
-![Python](https://img.shields.io/github/languages/top/Chencho2323/appointment-management-system?label=Python)
+Gestión de citas de entrega con reportes en tiempo real de tiempos promedio por línea de
+producto.
+**Django REST · JWT · Next.js · PostgreSQL · GitHub Actions**
 
 ### [integracion-continua](https://github.com/Chencho2323/integracion-continua)
-API Node.js con PostgreSQL, todo en contenedores. Arquitectura de integración
-continua con Docker, Docker Compose y pipeline Jenkins.
+API Node.js con PostgreSQL en contenedores, con pipeline de Jenkins para la integración
+continua.
 **Node.js · PostgreSQL · Docker · Jenkins**
 
-![JavaScript](https://img.shields.io/github/languages/top/Chencho2323/integracion-continua?label=JavaScript)
-![Docker](https://img.shields.io/github/languages/top/Chencho2323/integracion-continua?label=Docker)
+Los módulos de Odoo viven en repositorios privados. Si te interesa ver el código o evaluar una
+integración concreta, escríbeme y lo revisamos.
 
-### Proyectos privados
-[`agenda-citas-ia`](https://github.com/Chencho2323/agenda-citas-ia) y
-[`odoo-addons-colombia`](https://github.com/Chencho2323/odoo-addons-colombia) están
-en desarrollo activo. El primero es un asistente de agenda que interpreta lenguaje
-natural y administra citas por WhatsApp: Node.js 24, `node:sqlite` nativo, sin
-dependencias de terceros y 81 pruebas automatizadas.
+## Contacto
 
-Estos repositorios no son públicos. Si te interesa ver el código o evaluar una
-integración concreta, conversamos y lo revisamos.
-
-## Enfoque
-
-**Precisión técnica.** Código limpio, pruebas automatizadas y estándares de Odoo. Lo que prometemos, lo entregamos funcionando.
-
-**Velocidad real.** Entregas incrementales y despliegues repetibles: el negocio avanza mientras construimos.
-
-**Transparencia total.** Presupuestos claros, avances visibles y comunicación directa, sin sorpresas al final del proyecto.
-
-## Cómo trabajar conmigo
-
-Escríbeme por [WhatsApp](https://wa.me/573164925290), por [LinkedIn](https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info)
-o desde el [formulario de contacto](https://inheritdevs.com/contacto). Cuéntame tu
-proceso y armamos la mejor solución sobre Odoo.
+[WhatsApp](https://wa.me/573164925290) · [LinkedIn](https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez?trk=contact-info) · [inheritdevs.com](https://inheritdevs.com/)
 
 ---
 
-<div align="center">
-  <a href="https://inheritdevs.com/">
-    <img src="https://img.shields.io/badge/portfolio-inheritdevs.com-03A8FA?style=for-the-badge" alt="Portafolio" />
-  </a>
-  <br><br>
-  <sub>© 2026 InheritDevs · ERP · CRM · eCommerce · IA</sub>
-</div>
+<sub>© 2026 Sergio Alejandro Alarcón Hernández · Odoo · Facturación electrónica · IA</sub>
