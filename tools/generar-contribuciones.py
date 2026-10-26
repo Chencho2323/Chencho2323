@@ -55,9 +55,8 @@ API = "https://api.github.com"
 CALENDARIO_PUBLICO = f"https://github.com/users/{LOGIN}/contributions"
 PERFILES_GH = Path.home() / ".openclaw" / "credentials" / "github" / "personal"
 
-INICIO_MARCADOR = "<!-- CONTRIBUCIONES:INICIO -->"
-FIN_MARCADOR = "<!-- CONTRIBUCIONES:FIN -->"
-TITULO_SECCION = "## Actividad en GitHub"
+INICIO_MARCADOR = "<!-- ACTIVIDAD:INICIO -->"
+FIN_MARCADOR = "<!-- ACTIVIDAD:FIN -->"
 
 MESES = {
     1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio",
@@ -167,6 +166,20 @@ def dias_por_calendario_publico() -> list[dict] | None:
         {"fecha": fecha, "conteo": None, "activo": int(nivel) > 0, "nivel": int(nivel)}
         for fecha, nivel in celdas
     ]
+
+
+def total_anual_publico() -> int | None:
+    """Cifra anual que muestra la pagina publica de contribuciones."""
+    peticion = urllib.request.Request(
+        CALENDARIO_PUBLICO, headers={"User-Agent": "Mozilla/5.0"}
+    )
+    try:
+        with urllib.request.urlopen(peticion, timeout=30) as respuesta:
+            html = respuesta.read().decode("utf-8", "ignore")
+    except (urllib.error.URLError, OSError):
+        return None
+    m = re.search(r"([\d,]+)\s+contributions?\s+in the last year", html)
+    return int(m.group(1).replace(",", "")) if m else None
 
 
 def repositorios_publicos(token: str) -> int | None:
@@ -366,64 +379,33 @@ def svg_resumen(
 # --- README ----------------------------------------------------------------
 
 
-def bloque_cifras(
-    total: int,
-    activos: int,
-    racha: int,
-    commits: int | None,
-    repos: int | None,
-    desde: str,
-) -> str:
-    piezas = [
-        f"**{total} contribuciones** en el último año",
-        f"**{activos} días** con actividad",
-        f"racha actual de **{racha} días**",
-    ]
-    if commits is not None:
-        piezas.append(f"**{commits} commits** públicos")
-    if repos is not None:
-        piezas.append(f"**{repos} repositorios** abiertos")
-    return (
-        f"{INICIO_MARCADOR}\n"
-        + " · ".join(piezas)
-        + f" · en GitHub desde {desde}.\n"
-        + f"{FIN_MARCADOR}"
-    )
-
-
 def seccion_actividad(total: int) -> str:
+    """Los dos graficos, sin texto alrededor: las cifras ya estan en el SVG."""
     return "\n".join([
-        TITULO_SECCION,
-        "",
+        INICIO_MARCADOR,
         '<a href="https://github.com/' + LOGIN + '">',
         f'  <img src="https://raw.githubusercontent.com/{LOGIN}/{LOGIN}/main/'
         f'assets/contribuciones.svg" alt="Actividad en GitHub: {total} contribuciones '
-        f'en el último año" width="760" />',
+        f'en el último año" width="100%" />',
         "</a>",
         "",
-        '<p align="center">',
-        f'  <img src="https://raw.githubusercontent.com/{LOGIN}/{LOGIN}/main/'
-        f'assets/resumen.svg" alt="Resumen de actividad en GitHub" width="495" />',
-        "</p>",
-        "",
+        f'<img src="https://raw.githubusercontent.com/{LOGIN}/{LOGIN}/main/'
+        f'assets/resumen.svg" alt="Resumen de actividad en GitHub: racha, días activos, '
+        f'commits y repositorios" width="100%" />',
+        FIN_MARCADOR,
     ])
 
 
-def actualizar_readme(bloque: str, total: int) -> bool:
+def actualizar_readme(total: int) -> bool:
     if not README.exists():
         return False
     texto = README.read_text(encoding="utf-8")
-
-    # La seccion se reconstruye completa entre su titulo y el bloque de cifras:
-    # asi desaparecen las tarjetas de servicios externos y no se acumulan.
-    if TITULO_SECCION in texto and FIN_MARCADOR in texto:
-        inicio = texto.index(TITULO_SECCION)
-        fin = texto.index(FIN_MARCADOR) + len(FIN_MARCADOR)
-        nuevo = texto[:inicio] + seccion_actividad(total) + bloque + texto[fin:]
-    else:
-        nuevo = texto.rstrip() + "\n\n" + seccion_actividad(total) + bloque + "\n"
-
-    nuevo = re.sub(r"\n{3,}", "\n\n\n", nuevo)
+    if INICIO_MARCADOR not in texto or FIN_MARCADOR not in texto:
+        print("    AVISO: el README no tiene los marcadores ACTIVIDAD. No se modifica.")
+        return False
+    inicio = texto.index(INICIO_MARCADOR)
+    fin = texto.index(FIN_MARCADOR) + len(FIN_MARCADOR)
+    nuevo = texto[:inicio] + seccion_actividad(total) + texto[fin:]
     if nuevo == texto:
         return False
     README.write_text(nuevo, encoding="utf-8")
@@ -446,7 +428,7 @@ def main() -> None:
     if fuente == "graphql":
         total = sum(d["conteo"] for d in dias)
     else:
-        total = sum(1 for d in dias if d["activo"])
+        total = total_anual_publico() or sum(1 for d in dias if d["activo"])
     activos = sum(1 for d in dias if d["activo"])
     hoy = date.today()
     racha, maxima = rachas(dias, hoy)
@@ -460,10 +442,7 @@ def main() -> None:
         svg_resumen(total, activos, racha, maxima, commits, repos), encoding="utf-8"
     )
 
-    desde = (cuenta_desde(token) if token else None) or "octubre de 2019"
-    cambio = actualizar_readme(
-        bloque_cifras(total, activos, racha, commits, repos, desde), total
-    )
+    cambio = actualizar_readme(total)
 
     print(f"fuente: {fuente} · {total} contrib. · {activos} dias · racha {racha}/{maxima}")
     print(f"commits publicos: {commits} · repos publicos: {repos}")
