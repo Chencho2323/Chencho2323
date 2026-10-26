@@ -1,5 +1,12 @@
 # Sergio Alejandro Alarcón Hernández
 
+<p>
+  <a href="https://chencho2323.github.io/"><img src="https://img.shields.io/badge/portafolio-03A8FA?style=flat-square&logo=github&logoColor=white" alt="Portafolio" /></a>
+  <a href="https://inheritdevs.com/"><img src="https://img.shields.io/badge/inheritdevs.com-9800E9?style=flat-square&logo=googlechrome&logoColor=white" alt="InheritDevs" /></a>
+  <a href="https://www.linkedin.com/in/sergio-alejandro-alarc%C3%B3n-hern%C3%A1ndez"><img src="https://img.shields.io/badge/linkedin-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
+  <a href="https://wa.me/573164925290"><img src="https://img.shields.io/badge/whatsapp-25D366?style=flat-square&logo=whatsapp&logoColor=white" alt="WhatsApp" /></a>
+</p>
+
 <!-- ACTIVIDAD:INICIO -->
 <a href="https://github.com/Chencho2323">
   <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 289 contribuciones en el último año" width="100%" />
