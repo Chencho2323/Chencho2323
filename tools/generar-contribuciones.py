@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""
-Genera el grafico de actividad de contribuciones y sincroniza las cifras
-publicas del README de perfil.
+"""Graficos de actividad del perfil y cifras del README.
 
-Datos: el calendario publico de GitHub (el mismo que ve cualquier visitante
-sin token). No incluye repositorios privados ni nombres de ningun proyecto:
-solo la fecha y el nivel de actividad de cada dia.
+Todo se calcula con la API de GitHub: el calendario de contribuciones por dia,
+la racha actual y la mas larga, el total del ultimo ano, los commits publicos y
+los repositorios abiertos. No depende de servicios de terceros (readme-stats,
+streak-stats), que responden 200 con un SVG de error y dejan el perfil roto.
+
+Fuentes, en orden:
+    1. GraphQL con token (contribuciones exactas por dia, incluidas las privadas).
+    2. REST con token (repositorios y commits publicos).
+    3. Calendario publico anonimo, si no hay token.
 
 Salidas:
-    assets/contribuciones.svg   Grafico animado con la paleta de marca
-    README.md                    Bloque de cifras, delimitado por marcadores
+    assets/contribuciones.svg   Calendario anual con la paleta de marca
+    assets/resumen.svg          Racha actual, racha maxima y totales
+    README.md                   Seccion de actividad y bloque de cifras
 
 Uso:
     python3 tools/generar-contribuciones.py
@@ -18,369 +23,451 @@ Uso:
 from __future__ import annotations
 
 import json
+import os
 import re
-import time
+import urllib.error
 import urllib.request
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-# --- Identidad de marca (mismos tokens que inheritdevs.com) ---------------
+# --- Identidad de marca ----------------------------------------------------
 TEAL = "#03A8FA"
 VIOLET = "#9800E9"
 FONDO = "#0C1226"
-VACIA = "#111833"
+PANEL = "#111833"
 TEXTO = "#8FA3C4"
+CLARO = "#E6EDF7"
 
-# Nivel de actividad -> color. El nivel maximo usa violeta para anclar el
-# acento de marca y que el pico se lea de un vistazo.
-NIVELES = {
-    0: VACIA,
-    1: "#0B3A5C",
-    2: "#0E6FA8",
-    3: TEAL,
-    4: VIOLET,
-}
+NIVELES = {0: PANEL, 1: "#0B3A5C", 2: "#0E6FA8", 3: TEAL, 4: VIOLET}
 
 CELDA = 11
 HUECO = 3
-RETROCESO = 3  # celdas de margen a la izquierda
+RETROCESO = 3
 
+LOGIN = "Chencho2323"
 ORIGEN = Path(__file__).resolve().parent.parent
-DESTINO = ORIGEN / "assets" / "contribuciones.svg"
+ASSETS = ORIGEN / "assets"
+SVG_CALENDARIO = ASSETS / "contribuciones.svg"
+SVG_RESUMEN = ASSETS / "resumen.svg"
 README = ORIGEN / "README.md"
-CACHE = Path("/tmp/cal-contribuciones.json")
 
-URL_CALENDARIO = "https://github.com/users/Chencho2323/contributions"
-URL_STREAK = "https://github-readme-streak-stats.herokuapp.com/?user=Chencho2323&theme=dark"
-URL_STATS = (
-    "https://github-readme-stats.vercel.app/api"
-    "?username=Chencho2323&include_all_commits=true"
-)
-URL_USUARIO = "https://api.github.com/users/Chencho2323"
+API = "https://api.github.com"
+CALENDARIO_PUBLICO = f"https://github.com/users/{LOGIN}/contributions"
+PERFILES_GH = Path.home() / ".openclaw" / "credentials" / "github" / "personal"
 
 INICIO_MARCADOR = "<!-- CONTRIBUCIONES:INICIO -->"
 FIN_MARCADOR = "<!-- CONTRIBUCIONES:FIN -->"
+TITULO_SECCION = "## Actividad en GitHub"
+
+MESES = {
+    1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio",
+    7: "julio", 8: "agosto", 9: "septiembre", 10: "octubre", 11: "noviembre",
+    12: "diciembre",
+}
+MES_CORTO = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
+             "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
 
 
-def _descargar(url: str, timeout: int = 30) -> str:
-    peticion = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    return urllib.request.urlopen(peticion, timeout=timeout).read().decode("utf-8", "ignore")
+# --- Credencial ------------------------------------------------------------
 
 
-# --- Calendario ------------------------------------------------------------
-
-
-def calendario() -> list[dict]:
-    """Descarga (o reutiliza) el calendario publico de contribuciones."""
-    if CACHE.exists():
+def token_github() -> str:
+    """Token para consultar la API, sin escribirlo en ningun archivo."""
+    for variable in ("GITHUB_TOKEN", "GH_TOKEN"):
+        valor = os.environ.get(variable, "").strip()
+        if valor:
+            return valor
+    if not PERFILES_GH.is_dir():
+        return ""
+    candidatos = []
+    for directorio in PERFILES_GH.iterdir():
+        hosts = directorio / "hosts.yml"
+        if not hosts.is_file():
+            continue
         try:
-            datos = json.loads(CACHE.read_text(encoding="utf-8"))
-            if datos:
-                return datos
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    html = _descargar(URL_CALENDARIO)
-    patron = re.compile(r'data-date="(\d{4}-\d{2}-\d{2})"[^>]*?data-level="(\d)"')
-    celdas = [{"fecha": d, "nivel": int(n)} for d, n in patron.findall(html)]
-    if not celdas:
-        raise RuntimeError("no se pudo leer el calendario publico de contribuciones")
-    CACHE.write_text(json.dumps(celdas), encoding="utf-8")
-    return celdas
+            texto = hosts.read_text(encoding="utf-8", errors="ignore")
+            m = re.search(r"oauth_token:\s*(\S+)", texto)
+            if m:
+                candidatos.append((hosts.stat().st_mtime, m.group(1)))
+        except OSError:
+            continue
+    if not candidatos:
+        return ""
+    candidatos.sort(reverse=True)
+    return candidatos[0][1]
 
 
-def total_anio() -> int:
-    """Contribuciones del ultimo ano, tal como las reporta GitHub."""
-    html = _descargar(URL_CALENDARIO)
-    coincidencia = re.search(
-        r'id="js-contribution-activity-description"[^>]*>.*?([\d,]+)\s*contributions',
-        html,
-        re.S,
+def _peticion(url: str, token: str, datos: dict | None = None) -> dict:
+    cuerpo = json.dumps(datos).encode() if datos is not None else None
+    cabeceras = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": f"{LOGIN}-profile",
+    }
+    if token:
+        cabeceras["Authorization"] = f"token {token}"
+    peticion = urllib.request.Request(url, data=cuerpo, headers=cabeceras)
+    with urllib.request.urlopen(peticion, timeout=30) as respuesta:
+        return json.loads(respuesta.read().decode("utf-8"))
+
+
+def graphql(token: str, consulta: str) -> dict:
+    return _peticion(f"{API}/graphql", token, {"query": consulta})
+
+
+# --- Datos -----------------------------------------------------------------
+
+
+def dias_por_graphql(token: str) -> list[dict] | None:
+    consulta = (
+        "{ user(login: \"%s\") { contributionsCollection {"
+        " contributionCalendar { totalContributions"
+        " weeks { contributionDays { date contributionCount contributionLevel } }"
+        " } } } }" % LOGIN
     )
-    if not coincidencia:
-        coincidencia = re.search(r">([\d,]+)\s*contributions", html)
-    return int(coincidencia.group(1).replace(",", "")) if coincidencia else 0
-
-
-# --- Cifras publicas -------------------------------------------------------
-
-
-def _texto_svg(svg: str) -> list[str]:
-    return [t.strip() for t in re.findall(r"<text[^>]*>([^<]*)</text>", svg) if t.strip()]
-
-
-def _descargar_con_reintentos(url: str, intentos: int = 4) -> str | None:
-    """Descarga una URL reintentando. Las tarjetas de stats son intermitentes:
-    a veces responden 200 con un SVG de error de un solo texto."""
-    for i in range(intentos):
-        try:
-            contenido = _descargar(url)
-        except Exception:  # noqa: BLE001 - un fallo de red no debe romper el tool
-            contenido = ""
-        if len(_texto_svg(contenido)) > 2:
-            return contenido
-        if i < intentos - 1:
-            time.sleep(2 + i * 2)
-    return None
-
-
-def total_contribuciones() -> int | None:
-    """Total de contribuciones historicas (mismo origen que la tarjeta streak)."""
-    svg = _descargar_con_reintentos(URL_STREAK)
-    if svg is None:
-        return None
-    textos = _texto_svg(svg)
-    for i, t in enumerate(textos):
-        if t == "Total Contributions" and i > 0:
-            valor = textos[i - 1].replace(",", "")
-            return int(valor) if valor.isdigit() else None
-    return None
-
-
-def commits_publicos() -> int | None:
-    """Commits publicos (mismo origen que la tarjeta de estadisticas)."""
-    svg = _descargar_con_reintentos(URL_STATS)
-    if svg is None:
-        return None
-    textos = _texto_svg(svg)
-    for i, t in enumerate(textos):
-        if t.startswith("Total Commits"):
-            for j in range(i + 1, min(i + 4, len(textos))):
-                if textos[j].isdigit():
-                    return int(textos[j])
-    return None
-
-
-def repos_publicos() -> int | None:
     try:
-        import json as _json
+        datos = graphql(token, consulta)
+        coleccion = datos["data"]["user"]["contributionsCollection"]
+        calendario = coleccion["contributionCalendar"]
+    except (urllib.error.URLError, KeyError, TypeError, json.JSONDecodeError):
+        return None
+    niveles = {
+        "NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2,
+        "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4,
+    }
+    dias = []
+    for semana in calendario["weeks"]:
+        for dia in semana["contributionDays"]:
+            conteo = int(dia["contributionCount"])
+            dias.append({
+                "fecha": dia["date"],
+                "conteo": conteo,
+                "activo": conteo > 0,
+                "nivel": niveles.get(dia["contributionLevel"], 0),
+            })
+    return dias or None
 
-        datos = _json.loads(_descargar(URL_USUARIO))
-        return int(datos.get("public_repos", 0))
-    except Exception:  # noqa: BLE001
+
+def dias_por_calendario_publico() -> list[dict] | None:
+    """Sin token: el mismo calendario que ve un visitante anonimo."""
+    peticion = urllib.request.Request(
+        CALENDARIO_PUBLICO, headers={"User-Agent": "Mozilla/5.0"}
+    )
+    try:
+        with urllib.request.urlopen(peticion, timeout=30) as respuesta:
+            html = respuesta.read().decode("utf-8", "ignore")
+    except (urllib.error.URLError, OSError):
+        return None
+
+    celdas = re.findall(
+        r'data-date="(\d{4}-\d{2}-\d{2})"[^>]*?data-level="(\d)"', html
+    )
+    if not celdas:
+        return None
+    return [
+        {"fecha": fecha, "conteo": None, "activo": int(nivel) > 0, "nivel": int(nivel)}
+        for fecha, nivel in celdas
+    ]
+
+
+def repositorios_publicos(token: str) -> int | None:
+    try:
+        return int(_peticion(f"{API}/users/{LOGIN}", token).get("public_repos", 0))
+    except (urllib.error.URLError, ValueError, TypeError):
         return None
 
 
-# --- Generacion del SVG ----------------------------------------------------
+def commits_publicos(token: str) -> int | None:
+    try:
+        datos = _peticion(
+            f"{API}/search/commits?q=author%3A{LOGIN}&per_page=1", token
+        )
+        return int(datos.get("total_count", 0))
+    except (urllib.error.URLError, ValueError, TypeError):
+        return None
 
 
-def construir_rejilla(celdas: list[dict]) -> tuple[date, dict[tuple[int, int], int]]:
-    """Ubica cada celda en (fila, columna). Filas = dias de la semana."""
-    fechas = [date.fromisoformat(c["fecha"]) for c in celdas]
-    base = min(fechas)
-    rejilla: dict[tuple[int, int], int] = {}
-    for c in celdas:
-        d = date.fromisoformat(c["fecha"])
-        columna = (d - base).days // 7
-        # GitHub muestra domingo arriba: fila 0 = domingo.
-        fila = (d.weekday() + 1) % 7
-        rejilla[(fila, columna)] = c["nivel"]
-    return base, rejilla
+def cuenta_desde(token: str) -> str | None:
+    try:
+        creada = _peticion(f"{API}/users/{LOGIN}", token).get("created_at", "")
+        anio, mes = creada[:4], int(creada[5:7])
+        return f"{MESES[mes]} de {anio}"
+    except (urllib.error.URLError, ValueError, KeyError, TypeError):
+        return None
 
 
-def svg_animado(
-    base: date,
-    rejilla: dict[tuple[int, int], int],
-    total: int,
-    dias_activos: int,
-) -> str:
-    columnas = max(c for _, c in rejilla) + 1
-    ancho = columnas * (CELDA + HUECO) + RETROCESO
+# --- Metricas --------------------------------------------------------------
+
+
+def rachas(dias: list[dict], hoy: date) -> tuple[int, int]:
+    """Racha actual (hasta hoy o ayer) y racha mas larga, en dias."""
+    activos = {d["fecha"] for d in dias if d.get("activo")}
+    if not activos:
+        return 0, 0
+
+    actual = 0
+    cursor = hoy if hoy.isoformat() in activos else hoy - timedelta(days=1)
+    while cursor.isoformat() in activos:
+        actual += 1
+        cursor -= timedelta(days=1)
+
+    maxima = 0
+    corrida = 0
+    anterior = None
+    for fecha in sorted(activos):
+        dia = date.fromisoformat(fecha)
+        if anterior and (dia - anterior).days == 1:
+            corrida += 1
+        else:
+            corrida = 1
+        maxima = max(maxima, corrida)
+        anterior = dia
+    return actual, max(maxima, actual)
+
+
+def construir_semanas(dias: list[dict]) -> list[list[dict]]:
+    """Agrupa por semana con domingo como primer dia, como GitHub."""
+    semanas: list[list[dict]] = []
+    actual: list[dict] = []
+    for dia in sorted(dias, key=lambda d: d["fecha"]):
+        fecha = date.fromisoformat(dia["fecha"])
+        if fecha.weekday() == 6 and actual:
+            semanas.append(actual)
+            actual = []
+        actual.append({**dia, "dia": fecha})
+    if actual:
+        semanas.append(actual)
+    return semanas
+
+
+# --- SVG: calendario -------------------------------------------------------
+
+
+def svg_calendario(dias: list[dict], total: int, activos: int) -> str:
+    semanas = construir_semanas(dias)
+    columnas = len(semanas)
+    ancho = RETROCESO + columnas * (CELDA + HUECO)
     alto = 7 * (CELDA + HUECO) + 34
 
-    partes: list[str] = []
-    partes.append(
+    partes = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{ancho}" height="{alto}" '
         f'viewBox="0 0 {ancho} {alto}" role="img" '
-        f'aria-label="Grafico de actividad en GitHub: {total} contribuciones en el ultimo ano">'
-    )
-    partes.append(f"<title>Actividad en GitHub: {total} contribuciones en el último año</title>")
-    partes.append(
+        f'aria-label="Actividad en GitHub: {total} contribuciones en el ultimo ano">',
+        f"<title>Actividad en GitHub: {total} contribuciones en el último año</title>",
         "<style>"
         ".celda{transition:opacity .2s ease}"
         ".activa{animation:latido 3.2s ease-in-out infinite}"
         "@keyframes latido{0%,100%{opacity:1}50%{opacity:.45}}"
         "@media (prefers-reduced-motion: reduce){.activa{animation:none;opacity:1}}"
-        "</style>"
-    )
-    partes.append(f'<rect width="{ancho}" height="{alto}" rx="10" fill="{FONDO}"/>')
+        "</style>",
+        f'<rect width="{ancho}" height="{alto}" rx="10" fill="{FONDO}"/>',
+    ]
 
-    mes_actual = ""
-    for columna in range(columnas):
-        d = base + timedelta(days=7 * columna)
-        etiqueta = d.strftime("%b")
-        if etiqueta != mes_actual:
-            mes_actual = etiqueta
-            x = RETROCESO + columna * (CELDA + HUECO)
+    mes_previo = None
+    for indice, semana in enumerate(semanas):
+        primer_dia = semana[0]["dia"]
+        if primer_dia.month != mes_previo:
+            mes_previo = primer_dia.month
+            x = RETROCESO + indice * (CELDA + HUECO)
             partes.append(
-                f'<text x="{x}" y="11" fill="{TEXTO}" font-family="Inter,Segoe UI,sans-serif" '
-                f'font-size="9" text-anchor="middle">{etiqueta.upper()}</text>'
+                f'<text x="{x}" y="11" fill="{TEXTO}" '
+                f'font-family="Inter,Segoe UI,sans-serif" font-size="9">{MES_CORTO[mes_previo - 1]}</text>'
             )
 
-    indice = 0
-    activas: list[tuple[int, int, int]] = []
-    for (fila, columna), nivel in sorted(rejilla.items()):
-        x = RETROCESO + columna * (CELDA + HUECO)
-        y = 18 + fila * (CELDA + HUECO)
-        color = NIVELES.get(nivel, VACIA)
-        if nivel > 0:
-            activas.append((x, y, nivel))
-            continue
-        partes.append(
-            f'<rect class="celda" x="{x}" y="{y}" width="{CELDA}" height="{CELDA}" '
-            f'rx="2.5" fill="{color}"/>'
-        )
+    contador = 0
+    for columna, semana in enumerate(semanas):
+        for dia in semana:
+            x = RETROCESO + columna * (CELDA + HUECO)
+            y = 18 + ((dia["dia"].weekday() + 1) % 7) * (CELDA + HUECO)
+            nivel = dia["nivel"] if dia.get("activo") else 0
+            color = NIVELES.get(nivel, PANEL)
+            clase = "celda activa" if nivel > 0 else "celda"
+            estilo = ""
+            if nivel > 0:
+                estilo = f' style="animation-delay:{(contador % 7) * 0.16:.2f}s"'
+                contador += 1
+            partes.append(
+                f'<rect class="{clase}" x="{x}" y="{y}" width="{CELDA}" '
+                f'height="{CELDA}" rx="2.5" fill="{color}"{estilo}>'
+                f"<title>{dia['fecha']}: {dia['conteo'] or 1} contribuciones</title></rect>"
+            )
 
-    for x, y, nivel in activas:
-        retardo = (indice % 7) * 0.16
-        indice += 1
-        partes.append(
-            f'<rect class="celda activa" x="{x}" y="{y}" width="{CELDA}" height="{CELDA}" '
-            f'rx="2.5" fill="{NIVELES[nivel]}" '
-            f'style="animation-delay:{retardo:.2f}s">'
-            f"<title>{nivel} contribución(es) ese día</title></rect>"
-        )
-
-    y_pie = alto - 9
     partes.append(
-        f'<text x="{RETROCESO}" y="{y_pie}" fill="{TEXTO}" '
+        f'<text x="{RETROCESO}" y="{alto - 9}" fill="{TEXTO}" '
         f'font-family="Inter,Segoe UI,sans-serif" font-size="9">'
-        f"{total} contribuciones · {dias_activos} días con actividad · "
+        f"{total} contribuciones · {activos} días con actividad · "
         f"actualizado {date.today().isoformat()}</text>"
     )
     partes.append("</svg>")
     return "\n".join(partes)
 
 
-# --- Sincronizacion del README --------------------------------------------
+# --- SVG: resumen ----------------------------------------------------------
 
 
-def actualizar_readme(
-    total: int | None,
+def svg_resumen(
+    total: int,
+    activos: int,
+    racha: int,
+    maxima: int,
     commits: int | None,
     repos: int | None,
-    dias_activos: int,
-    desde: str,
-    total_anual: int,
-) -> bool:
-    """Reemplaza el bloque de cifras entre los marcadores. Devuelve True si cambio.
+) -> str:
+    ancho, alto = 495, 195
+    partes = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{ancho}" height="{alto}" '
+        f'viewBox="0 0 {ancho} {alto}" role="img" '
+        f'aria-label="Resumen de actividad en GitHub">',
+        "<title>Resumen de actividad en GitHub</title>",
+        f'<rect width="{ancho}" height="{alto}" rx="12" fill="{FONDO}"/>',
+        f'<text x="24" y="34" fill="{CLARO}" font-family="Inter,Segoe UI,sans-serif" '
+        f'font-size="15" font-weight="600">Actividad en GitHub</text>',
+        f'<text x="24" y="52" fill="{TEXTO}" font-family="Inter,Segoe UI,sans-serif" '
+        f'font-size="10">ultimo año · {date.today().isoformat()}</text>',
+    ]
 
-    Si alguna cifra no se pudo leer, no se toca el README: es preferible
-    dejar el dato viejo (que el script anterior verifico) que escribir un 0
-    que hace pensar que la cuenta quedo sin actividad.
-    """
+    # Bloque principal: contribuciones del ultimo ano.
+    partes.append(
+        f'<text x="24" y="112" fill="{TEAL}" font-family="Inter,Segoe UI,sans-serif" '
+        f'font-size="40" font-weight="700">{total}</text>'
+    )
+    partes.append(
+        f'<text x="24" y="132" fill="{TEXTO}" font-family="Inter,Segoe UI,sans-serif" '
+        f'font-size="10">contribuciones en el ultimo año</text>'
+    )
+
+    columnas = [
+        ("Racha actual", f"{racha} días"),
+        ("Racha máxima", f"{maxima} días"),
+        ("Días activos", f"{activos}"),
+        ("Commits públicos", f"{commits}" if commits is not None else "—"),
+        ("Repositorios", f"{repos}" if repos is not None else "—"),
+    ]
+    y = 70
+    for etiqueta, valor in columnas:
+        partes.append(
+            f'<text x="255" y="{y}" fill="{TEXTO}" font-family="Inter,Segoe UI,sans-serif" '
+            f'font-size="10">{etiqueta}</text>'
+        )
+        partes.append(
+            f'<text x="470" y="{y}" fill="{CLARO}" text-anchor="end" '
+            f'font-family="Inter,Segoe UI,sans-serif" font-size="11" '
+            f'font-weight="600">{valor}</text>'
+        )
+        y += 22
+
+    partes.append(
+        f'<text x="24" y="168" fill="{TEXTO}" font-family="Inter,Segoe UI,sans-serif" '
+        f'font-size="9">Datos del calendario público de GitHub.</text>'
+    )
+    partes.append("</svg>")
+    return "\n".join(partes)
+
+
+# --- README ----------------------------------------------------------------
+
+
+def bloque_cifras(
+    total: int,
+    activos: int,
+    racha: int,
+    commits: int | None,
+    repos: int | None,
+    desde: str,
+) -> str:
+    piezas = [
+        f"**{total} contribuciones** en el último año",
+        f"**{activos} días** con actividad",
+        f"racha actual de **{racha} días**",
+    ]
+    if commits is not None:
+        piezas.append(f"**{commits} commits** públicos")
+    if repos is not None:
+        piezas.append(f"**{repos} repositorios** abiertos")
+    return (
+        f"{INICIO_MARCADOR}\n"
+        + " · ".join(piezas)
+        + f" · en GitHub desde {desde}.\n"
+        + f"{FIN_MARCADOR}"
+    )
+
+
+def seccion_actividad(total: int) -> str:
+    return "\n".join([
+        TITULO_SECCION,
+        "",
+        '<a href="https://github.com/' + LOGIN + '">',
+        f'  <img src="https://raw.githubusercontent.com/{LOGIN}/{LOGIN}/main/'
+        f'assets/contribuciones.svg" alt="Actividad en GitHub: {total} contribuciones '
+        f'en el último año" width="760" />',
+        "</a>",
+        "",
+        '<p align="center">',
+        f'  <img src="https://raw.githubusercontent.com/{LOGIN}/{LOGIN}/main/'
+        f'assets/resumen.svg" alt="Resumen de actividad en GitHub" width="495" />',
+        "</p>",
+        "",
+    ])
+
+
+def actualizar_readme(bloque: str, total: int) -> bool:
     if not README.exists():
         return False
-
-    faltantes = [
-        nombre
-        for nombre, valor in (
-            ("contribuciones", total),
-            ("commits", commits),
-            ("repositorios", repos),
-        )
-        if valor is None
-    ]
-    if faltantes:
-        print(f"    AVISO: no se pudo leer {', '.join(faltantes)}. No se modifica el README.")
-        return False
-
-    bloque = (
-        f"{INICIO_MARCADOR}\n"
-        f"**{total} contribuciones** en GitHub desde {desde} · "
-        f"**{commits} commits** públicos · **{repos} repositorios** abiertos · "
-        f"**{dias_activos} días con actividad** en el último año.\n"
-        f"{FIN_MARCADOR}"
-    )
-
     texto = README.read_text(encoding="utf-8")
 
-    # 1) Se retira el bloque delimitado por los marcadores.
-    if INICIO_MARCADOR in texto and FIN_MARCADOR in texto:
-        inicio = texto.index(INICIO_MARCADOR)
+    # La seccion se reconstruye completa entre su titulo y el bloque de cifras:
+    # asi desaparecen las tarjetas de servicios externos y no se acumulan.
+    if TITULO_SECCION in texto and FIN_MARCADOR in texto:
+        inicio = texto.index(TITULO_SECCION)
         fin = texto.index(FIN_MARCADOR) + len(FIN_MARCADOR)
-        texto = texto[:inicio] + texto[fin:]
+        nuevo = texto[:inicio] + seccion_actividad(total) + bloque + texto[fin:]
+    else:
+        nuevo = texto.rstrip() + "\n\n" + seccion_actividad(total) + bloque + "\n"
 
-    # 2) Se retiran las lineas de cifras sueltas. Sin este paso puede quedar
-    #    una version antigua visible junto a la nueva, con dos cifras distintas.
-    texto = re.sub(
-        r"^\*\*[\d,]+ contribuciones\*\* en GitHub desde [^\n]*\n+",
-        "",
-        texto,
-        flags=re.M,
-    )
-
-    # 3) El bloque se inserta justo despues de la tabla de tarjetas.
-    ancla = "</table>"
-    if ancla not in texto:
-        return False
-    pos = texto.index(ancla) + len(ancla)
-    nuevo = texto[:pos] + "\n\n" + bloque + texto[pos:]
-
-    # 4) El texto alternativo del grafico lleva la cifra del ultimo ano: hay que
-    #    mantenerlo alineado con el dato real.
-    nuevo = re.sub(
-        r'alt="Actividad en GitHub: [\d.]+ contribuciones en el último año"',
-        f'alt="Actividad en GitHub: {total_anual} contribuciones en el último año"',
-        nuevo,
-    )
-
+    nuevo = re.sub(r"\n{3,}", "\n\n\n", nuevo)
     if nuevo == texto:
         return False
     README.write_text(nuevo, encoding="utf-8")
     return True
 
 
-def fecha_inicio() -> str | None:
-    """Mes y anio desde los que la cuenta acumula contribuciones."""
-    svg = _descargar_con_reintentos(URL_STREAK)
-    if svg is None:
-        return None
-    textos = _texto_svg(svg)
-    for i, t in enumerate(textos):
-        if t == "Total Contributions" and i + 1 < len(textos):
-            valor = textos[i + 1].split("-")[0].strip()
-            mes, _, anio = valor.partition(",")
-            meses = {
-                "Jan": "enero", "Feb": "febrero", "Mar": "marzo", "Apr": "abril",
-                "May": "mayo", "Jun": "junio", "Jul": "julio", "Aug": "agosto",
-                "Sep": "septiembre", "Oct": "octubre", "Nov": "noviembre",
-                "Dec": "diciembre",
-            }
-            clave = mes.strip()[:3]
-            if clave in meses:
-                return f"{meses[clave]} de {anio.strip()}"
-    return "octubre de 2019"
+# --- Principal -------------------------------------------------------------
 
 
 def main() -> None:
-    celdas = calendario()
-    base, rejilla = construir_rejilla(celdas)
-    dias_activos = sum(1 for c in celdas if c["nivel"] > 0)
-    total_anual = total_anio()
+    token = token_github()
+    dias = dias_por_graphql(token) if token else None
+    fuente = "graphql"
+    if dias is None:
+        dias = dias_por_calendario_publico()
+        fuente = "calendario publico"
+    if not dias:
+        raise SystemExit("No se pudo leer el calendario de contribuciones de GitHub.")
 
-    svg = svg_animado(base, rejilla, total_anual, dias_activos)
-    DESTINO.parent.mkdir(parents=True, exist_ok=True)
-    DESTINO.write_text(svg, encoding="utf-8")
-    print(f"OK  {DESTINO}  ({len(svg)} bytes)")
+    if fuente == "graphql":
+        total = sum(d["conteo"] for d in dias)
+    else:
+        total = sum(1 for d in dias if d["activo"])
+    activos = sum(1 for d in dias if d["activo"])
+    hoy = date.today()
+    racha, maxima = rachas(dias, hoy)
 
-    total = total_contribuciones()
-    commits = commits_publicos()
-    repos = repos_publicos()
-    desde = fecha_inicio()
+    ASSETS.mkdir(parents=True, exist_ok=True)
+    SVG_CALENDARIO.write_text(svg_calendario(dias, total, activos), encoding="utf-8")
 
-    if desde is None:
-        desde = "octubre de 2019"
+    commits = commits_publicos(token) if token else None
+    repos = repositorios_publicos(token) if token else None
+    SVG_RESUMEN.write_text(
+        svg_resumen(total, activos, racha, maxima, commits, repos), encoding="utf-8"
+    )
 
+    desde = (cuenta_desde(token) if token else None) or "octubre de 2019"
     cambio = actualizar_readme(
-        total, commits, repos, dias_activos, desde, total_anual
+        bloque_cifras(total, activos, racha, commits, repos, desde), total
     )
 
-    print(
-        f"    {total_anual} contrib. (ultimo ano) · {total} historicas · "
-        f"{commits} commits · {repos} repos · {dias_activos} dias activos"
-    )
-    print(f"    README: {'actualizado' if cambio else 'sin cambios'}")
+    print(f"fuente: {fuente} · {total} contrib. · {activos} dias · racha {racha}/{maxima}")
+    print(f"commits publicos: {commits} · repos publicos: {repos}")
+    print(f"README: {'actualizado' if cambio else 'sin cambios'}")
 
 
 if __name__ == "__main__":

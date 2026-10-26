@@ -15,32 +15,15 @@ DIAN y asistentes de IA conectados a los datos del negocio.
 ## Actividad en GitHub
 
 <a href="https://github.com/Chencho2323">
-  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 203 contribuciones en el último año" width="760" />
+  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 238 contribuciones en el último año" width="760" />
 </a>
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github-readme-stats.vercel.app/api?username=Chencho2323&show_icons=true&include_all_commits=true&theme=radical" alt="Estadísticas de GitHub" height="195" />
-    </td>
-    <td align="center">
-      <img src="https://github-readme-streak-stats.herokuapp.com/?user=Chencho2323&theme=dark&hide_border=true" alt="Racha de contribuciones" height="195" />
-    </td>
-  </tr>
-</table>
-
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/resumen.svg" alt="Resumen de actividad en GitHub" width="495" />
+</p>
 <!-- CONTRIBUCIONES:INICIO -->
-**215 contribuciones** en GitHub desde octubre de 2019 · **40 commits** públicos · **5 repositorios** abiertos · **24 días con actividad** en el último año.
+**238 contribuciones** en el último año · **31 días** con actividad · racha actual de **8 días** · **175 commits** públicos · **5 repositorios** abiertos · en GitHub desde octubre de 2019.
 <!-- CONTRIBUCIONES:FIN -->
-
-
-
-
-
-
-
-
-
 
 
 ## Qué hago
