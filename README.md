@@ -9,7 +9,7 @@
 
 <!-- ACTIVIDAD:INICIO -->
 <a href="https://github.com/Chencho2323">
-  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 289 contribuciones en el último año" width="100%" />
+  <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/contribuciones.svg" alt="Actividad en GitHub: 292 contribuciones en el último año" width="100%" />
 </a>
 
 <img src="https://raw.githubusercontent.com/Chencho2323/Chencho2323/main/assets/resumen.svg" alt="Resumen de actividad en GitHub: racha, días activos, commits y repositorios" width="100%" />
