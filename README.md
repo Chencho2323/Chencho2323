@@ -44,7 +44,7 @@ Odoo Community para proyectos y seguimiento de clientes.
 
 InheritDevs tiene cuatro meses. Los módulos están hechos: facturación electrónica, nómina
 electrónica, PILA con la Resolución 2388 de 2016 y un asistente de IA por WhatsApp que
-administra agenda. Estamos consiguiendo los primeros clientes.
+administra agenda.
 
 ## Stack
 
